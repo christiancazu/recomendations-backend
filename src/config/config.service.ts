@@ -1,22 +1,22 @@
 import * as fs from 'fs';
 import { parse } from 'dotenv';
-import { EnvConfig } from './interface/env-config.interface';
+import { EnvConfig } from './interfaces/env-config.interface';
 
 export class ConfigService {
-  private readonly envConfig: EnvConfig;
+  private readonly envConfig: EnvConfig;  
 
-  constructor(filePath: string) {
+  constructor() {
     const isDevelopmentEnv = process.env.NODE_ENV !== 'production';
 
     if (isDevelopmentEnv) {
-      // const envFilePath = __dirname + '/../../.env';
-      const existsPath = fs.existsSync(filePath);
+      const envFilePath = __dirname + '/../../.env';
+      const existsPath = fs.existsSync(envFilePath);
 
       if (!existsPath) {
         console.log('.env file not exists');
         process.exit(0);
       }
-      this.envConfig = parse(fs.readFileSync(filePath));
+      this.envConfig = parse(fs.readFileSync(envFilePath));
     } else {
       this.envConfig = {
         PORT: process.env.APP_PORT,
