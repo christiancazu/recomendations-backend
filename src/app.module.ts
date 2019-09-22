@@ -3,11 +3,13 @@ import { ConfigModule } from './config/config.module';
 import { ConfigService } from './config/config.service';
 import { ConfigEnum } from './config/enums/config.enum';
 import { DatabaseModule } from './database/database.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     ConfigModule, 
-    DatabaseModule
+    DatabaseModule, 
+    UsersModule
   ]
 })
 export class AppModule {
