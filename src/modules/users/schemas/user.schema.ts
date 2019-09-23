@@ -31,8 +31,13 @@ export const UserSchema = new Schema({
     enum: Object.values(StatusUser),
     default: StatusUser.ACTIVE,
   },
-  role: {
-    type: String,
+  roles: {
+    type: [
+      {
+        type: String,
+        enum: Object.values(RoleUser),
+      },
+    ],
     enum: Object.values(RoleUser),
     default: RoleUser.USER,
   },

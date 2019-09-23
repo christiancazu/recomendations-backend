@@ -4,12 +4,13 @@ import { ConfigService } from './config/config.service';
 import { ConfigEnum } from './config/enums/config.enum';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
+import { SharedModule } from './modules/shared/shared.module';
 
 @Module({
   imports: [
     ConfigModule, 
     DatabaseModule, 
-    UsersModule
+    UsersModule, SharedModule
   ]
 })
 export class AppModule {

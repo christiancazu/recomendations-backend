@@ -1,9 +1,17 @@
-import { Controller, Get, Post, Body, Response, Param, Put, Delete, HttpStatus } from '@nestjs/common';
+import { 
+  Controller, 
+  Get, 
+  Post, 
+  Body, 
+  Response, 
+  Param, 
+  Put, 
+  Delete, 
+  HttpStatus } from '@nestjs/common';
 import { IUser } from './interfaces/user.interface';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { User } from '../decorators/user.decorator';
 
 @Controller('users')
 export class UsersController {
@@ -15,8 +23,8 @@ export class UsersController {
   }
 
   @Post()
-  create(@Body() CreateUserDto: CreateUserDto): Promise<IUser> {
-    return this._usersService.create(CreateUserDto);
+  create(@Body() dto: CreateUserDto): Promise<IUser> {
+    return this._usersService.create(dto);
   }
 
   @Get(':id')
@@ -25,23 +33,13 @@ export class UsersController {
   }
 
   @Put(':id')
-  update(@Param('id') id: string, @User() dto: IUser): Promise<IUser> {
-    console.log('user :', dto);
-    return null;
-    // return this._usersService.update(id, dto);
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto): Promise<IUser> {
+    return this._usersService.update(id, dto);
   }
 
   @Delete(':id')
-  async delete(@Param('id') id: string, @Response() res): Promise<any> {
+  async delete(@Param('id') id: string, @Response() res): Promise<string> {
     const message = await this._usersService.delete(id);
-    res.status(HttpStatus.OK).json({ message });
+    return res.status(HttpStatus.OK).json({ message });
   }
 }
-
-
-  /*@Put(':id')
-  update(@Param('id') id: string, @User() user: IUser): IUser {
-    console.log('user :', user);
-    return user;
-    //return this._usersService.update(id, user);
-  }*/

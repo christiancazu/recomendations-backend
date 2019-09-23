@@ -14,53 +14,120 @@ import { UpdateUserDto } from './dto/update-user.dto';
 export class UsersService implements IUsersService {
   constructor(@InjectModel('User') private readonly _userModel: Model<IUser>) {}
 
+  /*
+  ███████╗██╗███╗   ██╗██████╗      █████╗ ██╗     ██╗
+  ██╔════╝██║████╗  ██║██╔══██╗    ██╔══██╗██║     ██║
+  █████╗  ██║██╔██╗ ██║██║  ██║    ███████║██║     ██║
+  ██╔══╝  ██║██║╚██╗██║██║  ██║    ██╔══██║██║     ██║
+  ██║     ██║██║ ╚████║██████╔╝    ██║  ██║███████╗███████╗
+  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝     ╚═╝  ╚═╝╚══════╝╚══════╝
+  */
+
   async findAll(): Promise<IUser[]> {
     const users = await this._userModel.find();
-    return users.map(u => this.sanitizeUser(u));
+    return users.map(u => this.sanitizeUserPassword(u));
   }
 
+  /*
+   ██████╗██████╗ ███████╗ █████╗ ████████╗███████╗
+  ██╔════╝██╔══██╗██╔════╝██╔══██╗╚══██╔══╝██╔════╝
+  ██║     ██████╔╝█████╗  ███████║   ██║   █████╗
+  ██║     ██╔══██╗██╔══╝  ██╔══██║   ██║   ██╔══╝
+  ╚██████╗██║  ██║███████╗██║  ██║   ██║   ███████╗
+   ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝
+  */
   async create(dto: CreateUserDto): Promise<IUser> {
     const emailExists = await this._userModel.findOne({ email: dto.email });
 
     if (emailExists) {
-      throw new UnprocessableEntityException('user already exists');
+      throw new UnprocessableEntityException(
+        'The email has already been taken',
+      );
     }
-    const createdUser = new this._userModel(dto);
-    return await createdUser.save();
+    const createdUser = await new this._userModel(dto).save();
+    return this.sanitizeUserPassword(createdUser);
   }
 
+  /*
+  ███████╗██╗███╗   ██╗██████╗     ██████╗ ██╗   ██╗    ██╗██████╗
+  ██╔════╝██║████╗  ██║██╔══██╗    ██╔══██╗╚██╗ ██╔╝    ██║██╔══██╗
+  █████╗  ██║██╔██╗ ██║██║  ██║    ██████╔╝ ╚████╔╝     ██║██║  ██║
+  ██╔══╝  ██║██║╚██╗██║██║  ██║    ██╔══██╗  ╚██╔╝      ██║██║  ██║
+  ██║     ██║██║ ╚████║██████╔╝    ██████╔╝   ██║       ██║██████╔╝
+  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝     ╚═════╝    ╚═╝       ╚═╝╚═════╝
+  */
   async findById(id: string): Promise<IUser> {
     try {
-      const userExists = await this._userModel.findById(id).exec();
-      return this.sanitizeUser(userExists);
+      const userExists = await this._userModel.findById(id);
+      return this.sanitizeUserPassword(userExists);
     } catch (error) {
-      throw new NotFoundException('user not found');
+      throw new NotFoundException('The user was not found');
     }
   }
 
+  /*
+  ███████╗██╗███╗   ██╗██████╗      ██████╗ ███╗   ██╗███████╗
+  ██╔════╝██║████╗  ██║██╔══██╗    ██╔═══██╗████╗  ██║██╔════╝
+  █████╗  ██║██╔██╗ ██║██║  ██║    ██║   ██║██╔██╗ ██║█████╗
+  ██╔══╝  ██║██║╚██╗██║██║  ██║    ██║   ██║██║╚██╗██║██╔══╝
+  ██║     ██║██║ ╚████║██████╔╝    ╚██████╔╝██║ ╚████║███████╗
+  ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝      ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+  */
   findOne(options: object): Promise<IUser> {
     throw new Error('Method not implemented.');
   }
 
+  /*
+  ██╗   ██╗██████╗ ██████╗  █████╗ ████████╗███████╗
+  ██║   ██║██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██╔════╝
+  ██║   ██║██████╔╝██║  ██║███████║   ██║   █████╗
+  ██║   ██║██╔═══╝ ██║  ██║██╔══██║   ██║   ██╔══╝
+  ╚██████╔╝██║     ██████╔╝██║  ██║   ██║   ███████╗
+   ╚═════╝ ╚═╝     ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝
+  */
   async update(id: string, dto: UpdateUserDto): Promise<IUser> {
     await this.findById(id);
     try {
-      await this._userModel.findOneAndUpdate(id, { ...dto, updateAt: Date.now }).exec();
-      return await this.findById(id);
+      await this._userModel
+        .findOneAndUpdate({ _id: id }, { ...dto, updatedAt: Date.now() })
+        .exec();
+      return this.findById(id)
     } catch (error) {
-      throw new UnprocessableEntityException('email is already taken');
+      throw new UnprocessableEntityException('The email has already been taken');
     }
   }
 
+  /*
+  ██████╗ ███████╗██╗     ███████╗████████╗███████╗
+  ██╔══██╗██╔════╝██║     ██╔════╝╚══██╔══╝██╔════╝
+  ██║  ██║█████╗  ██║     █████╗     ██║   █████╗
+  ██║  ██║██╔══╝  ██║     ██╔══╝     ██║   ██╔══╝
+  ██████╔╝███████╗███████╗███████╗   ██║   ███████╗
+  ╚═════╝ ╚══════╝╚══════╝╚══════╝   ╚═╝   ╚══════╝
+  */
   async delete(id: string): Promise<string> {
     const userDeleted = await this._userModel.findByIdAndRemove(id).exec();
-    if(!userDeleted) {
-      throw new NotFoundException('user not found');
+    if (!userDeleted) {
+      throw new NotFoundException('The user was not found, can\'t be deleted');
     }
-    return 'The user has been deleted';
+    return 'The user has been deleted succesfully';
   }
 
-  private sanitizeUser(user: IUser) {
+  /*
+  ███████╗ █████╗ ███╗   ██╗██╗████████╗██╗███████╗███████╗    ██╗   ██╗███████╗███████╗██████╗     ██████╗  █████╗ ███████╗███████╗██╗    ██╗ ██████╗ ██████╗ ██████╗
+  ██╔════╝██╔══██╗████╗  ██║██║╚══██╔══╝██║╚══███╔╝██╔════╝    ██║   ██║██╔════╝██╔════╝██╔══██╗    ██╔══██╗██╔══██╗██╔════╝██╔════╝██║    ██║██╔═══██╗██╔══██╗██╔══██╗
+  ███████╗███████║██╔██╗ ██║██║   ██║   ██║  ███╔╝ █████╗      ██║   ██║███████╗█████╗  ██████╔╝    ██████╔╝███████║███████╗███████╗██║ █╗ ██║██║   ██║██████╔╝██║  ██║
+  ╚════██║██╔══██║██║╚██╗██║██║   ██║   ██║ ███╔╝  ██╔══╝      ██║   ██║╚════██║██╔══╝  ██╔══██╗    ██╔═══╝ ██╔══██║╚════██║╚════██║██║███╗██║██║   ██║██╔══██╗██║  ██║
+  ███████║██║  ██║██║ ╚████║██║   ██║   ██║███████╗███████╗    ╚██████╔╝███████║███████╗██║  ██║    ██║     ██║  ██║███████║███████║╚███╔███╔╝╚██████╔╝██║  ██║██████╔╝
+  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝   ╚═╝   ╚═╝╚══════╝╚══════╝     ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝    ╚═╝     ╚═╝  ╚═╝╚══════╝╚══════╝ ╚══╝╚══╝  ╚═════╝ ╚═╝  ╚═╝╚═════╝
+  */
+  /**
+   * deleting the field 'password' from object
+   * returning the object without it
+   *
+   * @param user
+   */
+  private sanitizeUserPassword(user: IUser) {
     const sanitized = user.toObject();
     delete sanitized['password'];
     return sanitized;
