@@ -2,6 +2,7 @@ import {
   Injectable,
   UnprocessableEntityException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -9,6 +10,8 @@ import { IUser } from './interfaces/user.interface';
 import { CreateUserDto } from './dto/create-user.dto';
 import { IUsersService } from './interfaces/iusers.service';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CredentialsDto } from '../auth/dto/credentials.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService implements IUsersService {
@@ -22,10 +25,9 @@ export class UsersService implements IUsersService {
   ██║     ██║██║ ╚████║██████╔╝    ██║  ██║███████╗███████╗
   ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝     ╚═╝  ╚═╝╚══════╝╚══════╝
   */
-
   async findAll(): Promise<IUser[]> {
     const users = await this._userModel.find();
-    return users.map(u => this.sanitizeUserPassword(u));
+    return users.map(u => this.sanitizeUser(u));
   }
 
   /*
@@ -45,7 +47,7 @@ export class UsersService implements IUsersService {
       );
     }
     const createdUser = await new this._userModel(dto).save();
-    return this.sanitizeUserPassword(createdUser);
+    return this.sanitizeUser(createdUser);
   }
 
   /*
@@ -59,7 +61,7 @@ export class UsersService implements IUsersService {
   async findById(id: string): Promise<IUser> {
     try {
       const userExists = await this._userModel.findById(id);
-      return this.sanitizeUserPassword(userExists);
+      return this.sanitizeUser(userExists);
     } catch (error) {
       throw new NotFoundException('The user was not found');
     }
@@ -73,8 +75,29 @@ export class UsersService implements IUsersService {
   ██║     ██║██║ ╚████║██████╔╝    ╚██████╔╝██║ ╚████║███████╗
   ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝      ╚═════╝ ╚═╝  ╚═══╝╚══════╝
   */
-  findOne(options: object): Promise<IUser> {
-    throw new Error('Method not implemented.');
+  async findOne(options: object): Promise<IUser> {
+    const userFound = await this._userModel.findOne({ email: options['email'] });
+    return this.sanitizeUser(userFound) 
+  }
+
+  /*
+  ███████╗██╗ ██████╗ ███╗   ██╗    ██╗███╗   ██╗
+  ██╔════╝██║██╔════╝ ████╗  ██║    ██║████╗  ██║
+  ███████╗██║██║  ███╗██╔██╗ ██║    ██║██╔██╗ ██║
+  ╚════██║██║██║   ██║██║╚██╗██║    ██║██║╚██╗██║
+  ███████║██║╚██████╔╝██║ ╚████║    ██║██║ ╚████║
+  ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝    ╚═╝╚═╝  ╚═══╝
+  */
+  async signIn(dto: CredentialsDto): Promise<IUser> {
+    const userValid = await this._userModel.findOne({ email: dto.email });
+    if (!userValid) {
+      throw new UnauthorizedException('The user is invalid')
+    }
+    if (await bcrypt.compare(dto.password, userValid['password'])) {
+      return this.sanitizeUser(userValid);
+    } else {
+      throw new UnauthorizedException('The password is invalid');
+    }
   }
 
   /*
@@ -91,9 +114,11 @@ export class UsersService implements IUsersService {
       await this._userModel
         .findOneAndUpdate({ _id: id }, { ...dto, updatedAt: Date.now() })
         .exec();
-      return this.findById(id)
+      return this.findById(id);
     } catch (error) {
-      throw new UnprocessableEntityException('The email has already been taken');
+      throw new UnprocessableEntityException(
+        'The email has already been taken',
+      );
     }
   }
 
@@ -108,7 +133,7 @@ export class UsersService implements IUsersService {
   async delete(id: string): Promise<string> {
     const userDeleted = await this._userModel.findByIdAndRemove(id).exec();
     if (!userDeleted) {
-      throw new NotFoundException('The user was not found, can\'t be deleted');
+      throw new NotFoundException("The user was not found, can't be deleted");
     }
     return 'The user has been deleted succesfully';
   }
@@ -127,9 +152,12 @@ export class UsersService implements IUsersService {
    *
    * @param user
    */
-  private sanitizeUserPassword(user: IUser) {
+  private sanitizeUser(user: IUser): any {
     const sanitized = user.toObject();
+    // delete sanitized['_id'];
     delete sanitized['password'];
+    delete sanitized['createdAt'];
+    delete sanitized['updatedAt'];
     return sanitized;
   }
 }

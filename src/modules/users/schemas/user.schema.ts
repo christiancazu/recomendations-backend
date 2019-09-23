@@ -4,63 +4,66 @@ import { RoleUser } from '../enums/role-user.enum';
 import { PermissionUser } from '../enums/permission-user.enum';
 import { StatusUser } from '../enums/status.user.enum';
 
-export const UserSchema = new Schema({
-  names: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  surnames: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  email: {
-    type: String,
-    required: true,
-    trim: true,
-    unique: true,
-  },
-  password: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  status: {
-    type: String,
-    enum: Object.values(StatusUser),
-    default: StatusUser.ACTIVE,
-  },
-  roles: {
-    type: [
-      {
-        type: String,
-        enum: Object.values(RoleUser),
-      },
-    ],
-    enum: Object.values(RoleUser),
-    default: RoleUser.USER,
-  },
-  permissions: {
-    post: {
+export const UserSchema = new Schema(
+  {
+    names: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    surnames: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    email: {
+      type: String,
+      required: true,
+      trim: true,
+      unique: true,
+    },
+    password: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    status: {
+      type: String,
+      enum: Object.values(StatusUser),
+      default: StatusUser.ACTIVE,
+    },
+    roles: {
       type: [
         {
           type: String,
-          enum: Object.values(PermissionUser),
+          enum: Object.values(RoleUser),
         },
       ],
-      default: [...Object.values(PermissionUser)],
+      enum: Object.values(RoleUser),
+      default: RoleUser.USER,
+    },
+    permissions: {
+      post: {
+        type: [
+          {
+            type: String,
+            enum: Object.values(PermissionUser),
+          },
+        ],
+        default: [...Object.values(PermissionUser)],
+      },
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
     },
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { versionKey: false },
+);
 
 UserSchema.pre('save', async function(next) {
   try {

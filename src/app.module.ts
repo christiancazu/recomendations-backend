@@ -5,12 +5,15 @@ import { ConfigEnum } from './config/enums/config.enum';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { SharedModule } from './modules/shared/shared.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule, 
-    DatabaseModule, 
-    UsersModule, SharedModule
+    DatabaseModule,
+    SharedModule,
+    AuthModule,
+    UsersModule
   ]
 })
 export class AppModule {
