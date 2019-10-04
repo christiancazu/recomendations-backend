@@ -2,7 +2,6 @@ import {
   Injectable,
   UnprocessableEntityException,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -42,8 +41,12 @@ export class UsersService implements IUsersService {
     const emailExists = await this._userModel.findOne({ email: dto.email });
 
     if (emailExists) {
-      throw new UnprocessableEntityException(
-        'The email has already been taken',
+      throw new UnprocessableEntityException({
+          message: {
+            email: 'El correo electrónico ya está en uso'
+          }
+        }
+        // 'The email has already been taken',
       );
     }
     const createdUser = await new this._userModel(dto).save();
@@ -91,12 +94,20 @@ export class UsersService implements IUsersService {
   async signIn(dto: CredentialsDto): Promise<IUser> {
     const userValid = await this._userModel.findOne({ email: dto.email });
     if (!userValid) {
-      throw new UnauthorizedException('The user is invalid')
+      throw new UnprocessableEntityException({
+        message: {
+          email: 'El email no es válido'
+        }
+      })
     }
     if (await bcrypt.compare(dto.password, userValid['password'])) {
       return this.sanitizeUser(userValid);
     } else {
-      throw new UnauthorizedException('The password is invalid');
+      throw new UnprocessableEntityException({
+        message: {
+          password: 'La contraseña es incorrecta'
+        }
+      });
     }
   }
 
@@ -133,7 +144,7 @@ export class UsersService implements IUsersService {
   async delete(id: string): Promise<string> {
     const userDeleted = await this._userModel.findByIdAndRemove(id).exec();
     if (!userDeleted) {
-      throw new NotFoundException("The user was not found, can't be deleted");
+      throw new NotFoundException('The user was not found, can\'t be deleted');
     }
     return 'The user has been deleted succesfully';
   }
