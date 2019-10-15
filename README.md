@@ -1,4 +1,4 @@
-<h1 align="center">AREQUIPA-STORE</h1>
+<h1 align="center">RECOMMENDATIONS - BACKEND</h1>
 
 ## Description
 
