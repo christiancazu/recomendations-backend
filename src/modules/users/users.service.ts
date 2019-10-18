@@ -125,7 +125,8 @@ export class UsersService implements IUsersService {
       await this._userModel
         .findOneAndUpdate({ _id: id }, { ...dto, updatedAt: Date.now() })
         .exec();
-      return this.findById(id);
+      const userUpdated = await this.findById(id)
+      return userUpdated;
     } catch (error) {
       throw new UnprocessableEntityException(
         'The email has already been taken',
@@ -164,8 +165,10 @@ export class UsersService implements IUsersService {
    * @param user
    */
   private sanitizeUser(user: IUser): any {
+
+    // const pw = bcrypt.
+
     const sanitized = user.toObject();
-    // delete sanitized['_id'];
     sanitized['id'] = sanitized['_id']
     delete sanitized['_id'];
     delete sanitized['password'];
