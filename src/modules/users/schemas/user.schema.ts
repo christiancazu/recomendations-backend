@@ -53,6 +53,13 @@ export const UserSchema = new Schema(
         default: [...Object.values(PermissionUser)],
       },
     },
+    languages: {
+      type: [
+        {
+          type: String
+        }
+      ]
+    },
     createdAt: {
       type: Date,
       default: Date.now,

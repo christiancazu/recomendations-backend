@@ -1,0 +1,13 @@
+db.users.insertOne({"names": "Christian",
+"surnames": "Carrillo Zúñiga",
+"email": "admin@gmail.com",
+"password": "12345678"})
+	
+db.users.updateOne(
+{ names: "Christian" },
+{ $set: {
+  roles: ["admin", "user"]
+}
+}
+)
+	

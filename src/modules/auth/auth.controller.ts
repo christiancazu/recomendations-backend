@@ -20,7 +20,14 @@ export class AuthController {
   @Post('signIn')
   async signIn(@Body() dto: CredentialsDto, @Response() res): Promise<any> {
     const user = await this._usersService.signIn(dto);
-    const token = await this._authService.signPayload(user);
+
+    let userAsPayload = {}
+
+    Object.keys(user).forEach(key => {
+      if (key !== 'languages') userAsPayload[key] = user[key]
+    });
+
+    const token = await this._authService.signPayload(userAsPayload);
     return res.status(HttpStatus.OK).json({ user, token });
   }
 
