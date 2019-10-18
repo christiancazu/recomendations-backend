@@ -65,6 +65,12 @@ export const UserSchema = new Schema(
   { versionKey: false },
 );
 
+// UserSchema.method('toJSON', function () {
+//   const { __v, _id, ...object } = this.toObject();
+//   object.id = _id;
+//   return object;
+// });
+
 UserSchema.pre('save', async function(next) {
   try {
     if (!this.isModified('password')) {

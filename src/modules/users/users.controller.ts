@@ -13,14 +13,24 @@ import { IUser } from './interfaces/user.interface';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { AdminGuard } from './guards/admin.guard';
+import { Roles } from './decorators/role.decorator';
+import { User } from './decorators/user.decorator';
+import { RoleGuard } from './guards/role.guard';
+import { RoleUser } from './enums/role-user.enum';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly _usersService: UsersService) {}
 
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  findByToken(@User('id') userId: string): Promise<IUser> {
+    return this._usersService.findById(userId);
+  }
+
   @Get()
-  @UseGuards(AuthGuard('jwt'), AdminGuard)
+  @Roles(RoleUser.ADMIN)
+  @UseGuards(AuthGuard('jwt'), RoleGuard)
   findAll(): Promise<IUser[]> {
     return this._usersService.findAll();
   }

@@ -24,7 +24,7 @@ export class UsersService implements IUsersService {
   ██║     ██║██║ ╚████║██████╔╝    ██║  ██║███████╗███████╗
   ╚═╝     ╚═╝╚═╝  ╚═══╝╚═════╝     ╚═╝  ╚═╝╚══════╝╚══════╝
   */
-  async findAll(): Promise<IUser[]> {
+  async findAll(): Promise<any> {
     const users = await this._userModel.find();
     return users.map(u => this.sanitizeUser(u));
   }
@@ -166,6 +166,8 @@ export class UsersService implements IUsersService {
   private sanitizeUser(user: IUser): any {
     const sanitized = user.toObject();
     // delete sanitized['_id'];
+    sanitized['id'] = sanitized['_id']
+    delete sanitized['_id'];
     delete sanitized['password'];
     delete sanitized['createdAt'];
     delete sanitized['updatedAt'];
