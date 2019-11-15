@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './modules/users/users.module';
 import { SharedModule } from './modules/shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { InterestsModule } from './modules/interests/interests.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AuthModule } from './modules/auth/auth.module';
     DatabaseModule,
     SharedModule,
     AuthModule,
-    UsersModule
+    UsersModule,
+    InterestsModule
   ]
 })
 export class AppModule {
