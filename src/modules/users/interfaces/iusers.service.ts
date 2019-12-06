@@ -7,5 +7,7 @@ import { CredentialsDto } from '../../../modules/auth/dto/credentials.dto';
 export interface IUsersService extends IBaseService<IUser, CreateUserDto, UpdateUserDto> {
 
   signIn(dto: CredentialsDto): Promise<IUser>;
+  
+  findAllExceptOne (userId: string): Promise<any>;
 
 }

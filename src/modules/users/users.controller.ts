@@ -18,6 +18,7 @@ import { User } from './decorators/user.decorator';
 import { RoleGuard } from './guards/role.guard';
 import { RoleUser } from './enums/role-user.enum';
 import { AuthService } from '../auth/auth.service';
+import { UpdateSkillsUserDto } from './dto/update-skills-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -26,17 +27,23 @@ export class UsersController {
     private readonly _authService: AuthService,
   ) {}
 
+  @Get()
+  // @Roles(RoleUser.ADMIN)
+  @UseGuards(AuthGuard('jwt'))
+  findAll (@User('id') userId: string): Promise<IUser[]> {
+    return this._usersService.findAllExceptOne(userId);
+  }
+
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
   findByToken(@User('id') userId: string): Promise<IUser> {
     return this._usersService.findById(userId);
   }
 
-  @Get()
-  @Roles(RoleUser.ADMIN)
-  @UseGuards(AuthGuard('jwt'), RoleGuard)
-  findAll(): Promise<IUser[]> {
-    return this._usersService.findAll();
+  @Get('recommendations')
+  @UseGuards(AuthGuard('jwt'))
+  recommendations (@User('id') userId: string): Promise<IUser[]> {
+    return this._usersService.recommendations(userId);
   }
 
   @Get(':id')
@@ -56,6 +63,15 @@ export class UsersController {
     const token = await this._authService.signPayload(user);
 
     return res.status(HttpStatus.OK).json({ user, token });
+  }
+
+  @Put('/skills')
+  @UseGuards(AuthGuard('jwt'))
+  async updateSkills (
+    @User('id') userId: string,
+    @Body() dto: UpdateSkillsUserDto
+  ) {
+    await this._usersService.updateSkills(userId, dto);
   }
 
   @Delete(':id')

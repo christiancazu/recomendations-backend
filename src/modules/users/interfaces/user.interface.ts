@@ -11,6 +11,8 @@ export interface IUser extends Document {
   readonly status?: string;
   readonly role?: string[];
   readonly permissions?: IPermission;
+  readonly skills?: [];
+  readonly description?: string;
   readonly createdAt?: Date;
   readonly updatedAt?: Date;
 }

@@ -4,17 +4,25 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
 import { IUser } from './interfaces/user.interface';
-import { CreateUserDto } from './dto/create-user.dto';
 import { IUsersService } from './interfaces/iusers.service';
+import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateSkillsUserDto } from './dto/update-skills-user.dto';
 import { CredentialsDto } from '../auth/dto/credentials.dto';
+import { IInterests } from '../interests/interfaces/iinterests.interface';
+
+import { Model } from 'mongoose';
+
 import * as bcrypt from 'bcrypt';
+
+const createKDTree = require("static-kdtree")
 
 @Injectable()
 export class UsersService implements IUsersService {
-  constructor(@InjectModel('User') private readonly _userModel: Model<IUser>) {}
+  constructor(
+    @InjectModel('User') private readonly _userModel: Model<IUser>, 
+    @InjectModel('Interests') private readonly _interestsModel: Model<IInterests>) {}
 
   /*
   ███████╗██╗███╗   ██╗██████╗      █████╗ ██╗     ██╗
@@ -26,6 +34,11 @@ export class UsersService implements IUsersService {
   */
   async findAll(): Promise<any> {
     const users = await this._userModel.find();
+    return users.map(u => this.sanitizeUser(u));
+  }
+
+  async findAllExceptOne(userId: string): Promise<any> {
+    const users = await this._userModel.find({ $and: [{ "_id": { $ne: userId } }, { "roles": ["tutor"] }]})
     return users.map(u => this.sanitizeUser(u));
   }
 
@@ -120,7 +133,6 @@ export class UsersService implements IUsersService {
    ╚═════╝ ╚═╝     ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝
   */
   async update(id: string, dto: UpdateUserDto): Promise<IUser> {
-    await this.findById(id);
     try {
       await this._userModel
         .findOneAndUpdate({ _id: id }, { ...dto, updatedAt: Date.now() })
@@ -135,6 +147,22 @@ export class UsersService implements IUsersService {
   }
 
   /*
+  ██╗   ██╗██████╗ ██████╗  █████╗ ████████╗███████╗    ███████╗██╗  ██╗██╗██╗     ██╗     ███████╗
+  ██║   ██║██╔══██╗██╔══██╗██╔══██╗╚══██╔══╝██╔════╝    ██╔════╝██║ ██╔╝██║██║     ██║     ██╔════╝
+  ██║   ██║██████╔╝██║  ██║███████║   ██║   █████╗      ███████╗█████╔╝ ██║██║     ██║     ███████╗
+  ██║   ██║██╔═══╝ ██║  ██║██╔══██║   ██║   ██╔══╝      ╚════██║██╔═██╗ ██║██║     ██║     ╚════██║
+  ╚██████╔╝██║     ██████╔╝██║  ██║   ██║   ███████╗    ███████║██║  ██╗██║███████╗███████╗███████║
+   ╚═════╝ ╚═╝     ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚══════╝    ╚══════╝╚═╝  ╚═╝╚═╝╚══════╝╚══════╝╚══════╝
+  */
+  async updateSkills (id: string, dto: UpdateSkillsUserDto) {
+    try {
+      await this._userModel.findOneAndUpdate({ _id: id }, { ...dto, updatedAt: Date.now() })
+    } catch (error) {
+      throw new UnprocessableEntityException();
+    }
+  }
+
+  /*
   ██████╗ ███████╗██╗     ███████╗████████╗███████╗
   ██╔══██╗██╔════╝██║     ██╔════╝╚══██╔══╝██╔════╝
   ██║  ██║█████╗  ██║     █████╗     ██║   █████╗
@@ -143,11 +171,53 @@ export class UsersService implements IUsersService {
   ╚═════╝ ╚══════╝╚══════╝╚══════╝   ╚═╝   ╚══════╝
   */
   async delete(id: string): Promise<string> {
-    const userDeleted = await this._userModel.findByIdAndRemove(id).exec();
+    const userDeleted = await this._userModel.findByIdAndRemove(id);
     if (!userDeleted) {
       throw new NotFoundException('The user was not found, can\'t be deleted');
     }
     return 'The user has been deleted succesfully';
+  }
+
+
+  /*
+  ██████╗ ███████╗ ██████╗ ██████╗ ███╗   ███╗███╗   ███╗███████╗███╗   ██╗██████╗  █████╗ ████████╗██╗ ██████╗ ███╗   ██╗███████╗
+  ██╔══██╗██╔════╝██╔════╝██╔═══██╗████╗ ████║████╗ ████║██╔════╝████╗  ██║██╔══██╗██╔══██╗╚══██╔══╝██║██╔═══██╗████╗  ██║██╔════╝
+  ██████╔╝█████╗  ██║     ██║   ██║██╔████╔██║██╔████╔██║█████╗  ██╔██╗ ██║██║  ██║███████║   ██║   ██║██║   ██║██╔██╗ ██║███████╗
+  ██╔══██╗██╔══╝  ██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║██╔══╝  ██║╚██╗██║██║  ██║██╔══██║   ██║   ██║██║   ██║██║╚██╗██║╚════██║
+  ██║  ██║███████╗╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║███████╗██║ ╚████║██████╔╝██║  ██║   ██║   ██║╚██████╔╝██║ ╚████║███████║
+  ╚═╝  ╚═╝╚══════╝ ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚══════╝
+  */
+  async recommendations (userId: string): Promise<any> {
+    const userInterests: IInterests = await this._interestsModel.findOne({ userId }, { _id: 0 });
+    const usersInterests: IInterests[] = await this._interestsModel.find({ "userId": { $ne: userId } }, { _id: 0 });
+
+    const userInterestsValues: Number[] = this.interestsToArray(userInterests)
+    const usersInterestsValues: Number[][] = []
+
+    usersInterests.forEach(ui => {
+      usersInterestsValues.push(this.interestsToArray(ui))
+    })
+    
+    const recommendedIndexUsers = this.getUsersRecommended(userInterestsValues, usersInterestsValues)
+
+    return usersInterests.filter((ui, index) => recommendedIndexUsers.includes(index)).map(u => ({ id: u.userId }))
+  }
+
+  interestsToArray ({ interests }: IInterests): Number[] {
+    let interestsValues: Number[] = []
+
+    Object.values(interests).forEach(interest => {      
+      interestsValues.push(...Object.values(interest).map(({ value }) => Number(value)))
+    })
+    return interestsValues
+  } 
+
+  getUsersRecommended (userInterestsValues: Number[], usersInterestsValues: Number[][]): Number[] {
+    const tree = createKDTree(usersInterestsValues)
+    const recommendedIndexUsers = tree.knn(userInterestsValues, usersInterestsValues.length)
+    tree.dispose()
+
+    return recommendedIndexUsers
   }
 
   /*
